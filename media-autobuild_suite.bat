@@ -116,7 +116,7 @@ libopenmpt version3
 set ffmpeg_options_full=chromaprint decklink frei0r libbs2b libcaca ^
 libcdio libfdk-aac libflite libfribidi libgme libgsm libilbc libsvthevc libsvtav1 ^
 #libsvtvp9 libkvazaar libmodplug librtmp librubberband #libssh libtesseract libxavs ^
-libzmq libzvbi openal libvmaf libcodec2 libsrt ladspa librav1e #vapoursynth #liblensfun
+libzmq libzvbi openal libvmaf libcodec2 libsrt ladspa librav1e #vapoursynth #liblensfun libndi_newtek
 
 :: options also available with the suite that add shared dependencies
 set ffmpeg_options_full_shared=opencl opengl cuda-nvcc libnpp libopenh264
