@@ -23,6 +23,7 @@ For information about the compiler environment see the wiki, there you also have
         - cuda-llvm (built-in)
         - cuvid (built-in)
         - ffnvcodec (git)
+        - libaom (git)
         - libdav1d (git)
         - libmp3lame (mingw)
         - libopus (mingw)
@@ -49,7 +50,6 @@ For information about the compiler environment see the wiki, there you also have
             - mbedtls (mingw)
                 - preferred to gnutls if GPLv3 license is chosen
             - gnutls (latest release)
-        - libaom (git)
         - libass (git)
             - by default with DirectWrite backend
             - if --enable-fontconfig, fontconfig backend included
@@ -176,7 +176,6 @@ For information about the compiler environment see the wiki, there you also have
     - webp tools (git)
     - x264 (8 and 10 bit, with l-smash [mp4 output], lavf and ffms2) (git)
     - x265 (8, 10 and 12 bit) (hg)
-        - includes svt-hevc encoder if enabled
     - xvc (git) (unsupported)
     - xvid (1.3.5)
 

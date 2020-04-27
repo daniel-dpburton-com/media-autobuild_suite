@@ -2,9 +2,9 @@
 # shellcheck disable=SC2154,SC2120,SC2119,SC2034,SC1090,SC1117,SC2030,SC2031
 
 if [[ ! $cpuCount =~ ^[0-9]+$ ]]; then
-    cpuCount="$(($(nproc) / 2))"
+    cpuCount=$(($(nproc) / 2))
 fi
-bits="${bits:-64bit}"
+: "${bits:=64bit}"
 curl_opts=(/usr/bin/curl --connect-timeout 15 --retry 3
     --retry-delay 5 --silent --location --insecure --fail)
 
@@ -64,44 +64,34 @@ do_print_status() {
 
 do_print_progress() {
     case $logging$timeStamp in
-    n*) set_title "$* in $(get_first_subdir)" ;;
-    yy)
-        if [[ $1 =~ ^[a-zA-Z] ]]; then
-            printf "${purple}"'%(%H:%M:%S)T'"${reset}"' %s\n' -1 "${bold}├${reset} $*..."
-        else
-            printf "${purple}"'%(%H:%M:%S)T'"${reset}"' %s\n' -1 "$*..."
-        fi
-        return
-        ;;
+    yy) printf "${purple}"'%(%H:%M:%S)T'"${reset}"' %s\n' -1 "$([[ $1 =~ ^[a-zA-Z] ]] && echo "${bold}├${reset} ")$*..." ;;
     yn)
-        if [[ $1 =~ ^[a-zA-Z] ]]; then
-            echo "${bold}├${reset} $*..."
+        [[ $1 =~ ^[a-zA-Z] ]] &&
+            printf '%s' "${bold}├${reset} "
+        echo -e "$*..."
+        ;;
+    *)
+        set_title "$* in $(get_first_subdir)"
+        if [[ $timeStamp == y ]]; then
+            printf "${purple}"'%(%H:%M:%S)T'"${reset}"' %s\n' -1 "${bold}$* in $(get_first_subdir)${reset}"
         else
-            echo -e "$*..."
+            echo -e "${bold}$* in $(get_first_subdir)${reset}"
         fi
-        return
         ;;
     esac
-    if [[ $timeStamp == y ]]; then
-        printf "${purple}"'%(%H:%M:%S)T'"${reset}"' %s\n' -1 "${bold}$* in $(get_first_subdir)${reset}"
-    else
-        echo -e "${bold}$* in $(get_first_subdir)${reset}"
-    fi
 }
 
 set_title() {
-    local title="media-autobuild_suite ($bits)"
-    [[ -z $1 ]] || title="$title: $1"
-    printf '\033]0;%s\a' "$title"
+    printf '\033]0;media-autobuild_suite  %s\a' "($bits)${1:+: $1}"
 }
 
 do_exit_prompt() {
-    if [[ -n "$build32$build64" ]]; then # meaning "executing this in the suite's context"
+    if [[ -n $build32$build64 ]]; then # meaning "executing this in the suite's context"
         create_diagnostic
         zip_logs
     fi
     do_prompt "$*"
-    [[ -n "$build32$build64" ]] && exit 1
+    [[ -n $build32$build64 ]] && exit 1
 }
 
 cd_safe() {
@@ -178,6 +168,16 @@ vcs_test_remote() {
     *) return 1 ;;
     esac
 }
+
+vcs_clean() (
+    cd "${1:-$PWD}" 2> /dev/null || return 1
+    case ${2:-$(vcs_get_current_type "$1")} in
+    git) GIT_TERMINAL_PROMPT=0 git clean -dffxq -e{recently_{updated,checked},build_successful{32,64}bit} "$@" ;;
+    hg) hg --noninteractive purge --config extensions.purge= -X{recently_{updated,checked},build_successful{32,64}bit} "$@" ;;
+    svn) svn --non-interactive cleanup --remove-unversioned -q "$@" ;;
+    *) false ;;
+    esac
+)
 
 # vcs_clone https://gitlab.com/libtiff/libtiff.git tiff v4.1.0
 vcs_clone() (
@@ -1048,7 +1048,7 @@ do_getMpvConfig() {
         IFS=$'\n' read -d '' -r -a MPV_TEMP_OPTS < <(do_readoptionsfile "$LOCALBUILDDIR/mpv_options.txt")
     fi
     do_removeOption MPV_TEMP_OPTS \
-        "--(en|dis)able-(vapoursynth-lazy|libguess|static-build|enable-gpl3|egl-angle-lib|encoding|crossc|dvdread)"
+        "--(en|dis)able-(vapoursynth-lazy|libguess|static-build|enable-gpl3|egl-angle-lib|encoding|crossc|dvdread|libass)"
     for opt in "${MPV_TEMP_OPTS[@]}"; do
         [[ -n $opt ]] && MPV_OPTS+=("$opt")
     done
@@ -1311,7 +1311,7 @@ do_meson() {
     [[ -f "$(get_first_subdir -f)/do_not_reconfigure" ]] &&
         return
     # shellcheck disable=SC2086
-    PKG_CONFIG=pkg-config CC=gcc.bat CXX=g++.bat \
+    PKG_CONFIG=pkg-config CC=${CC/ccache /}.bat CXX=${CXX/ccache /}.bat \
         log "meson" meson "$root" --default-library=static --buildtype=release \
         --prefix="$LOCALDESTDIR" --backend=ninja $bindir "$@" "${meson_extras[@]}"
     extra_script post meson
@@ -1326,12 +1326,6 @@ do_mesoninstall() {
 
 do_rust() {
     log "rust.update" "$RUSTUP_HOME/bin/cargo.exe" update
-    if [[ $ccache == y ]]; then
-        type sccache > /dev/null 2>&1 &&
-            export RUSTC_WRAPPER=sccache
-    else
-        unset RUSTC_WRAPPER
-    fi
     # use this array to pass additional parameters to cargo
     local rust_extras=()
     extra_script pre rust
@@ -1518,6 +1512,12 @@ do_configure() {
         "${conf_extras[@]}"
     extra_script post configure
     unset conf_extras
+}
+
+do_qmake() {
+    extra_script pre qmake
+    log "qmake" qmake "$@"
+    extra_script post qmake
 }
 
 do_make() {
@@ -2336,6 +2336,8 @@ unset_extra_script() {
 
     # Runs before and after running ninja (do_ninja)
     unset _{pre,post}_ninja
+
+    unset _{pre,post}_qmake
 
     # Runs before and after running make, meson, ninja, and waf (Generic hook for the previous build hooks)
     # If this is present, it will override the other hooks

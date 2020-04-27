@@ -94,7 +94,8 @@ set msyspackages=asciidoc autoconf automake-wrapper autogen bison diffstat dos2u
 intltool libtool patch python xmlto make zip unzip git subversion wget p7zip mercurial man-db ^
 gperf winpty texinfo gyp-git doxygen autoconf-archive itstool ruby mintty flex
 
-set mingwpackages=cmake dlfcn libpng gcc nasm pcre tools-git yasm ninja pkg-config meson ccache jq
+set mingwpackages=cmake dlfcn libpng gcc nasm pcre tools-git yasm ninja pkg-config meson ccache jq ^
+clang
 
 :: built-ins
 set ffmpeg_options_builtin=--disable-autodetect amf bzlib cuda cuvid d3d11va dxva2 ^
@@ -102,26 +103,26 @@ iconv lzma nvenc schannel zlib sdl2 ffnvcodec nvdec cuda-llvm
 
 :: common external libs
 set ffmpeg_options_basic=gmp libmp3lame libopus libvorbis libvpx libx264 libx265 ^
-libdav1d --disable-debug
+libdav1d libaom --disable-debug
 
 :: options used in zeranoe builds and not present above
 set ffmpeg_options_zeranoe=fontconfig gnutls libass libbluray libfreetype ^
 libmfx libmysofa libopencore-amrnb libopencore-amrwb libopenjpeg libsnappy ^
 libsoxr libspeex libtheora libtwolame libvidstab libvo-amrwbenc libwavpack ^
 libwebp libxml2 libzimg libshine gpl openssl libtls avisynth mbedtls libxvid ^
-libaom libopenmpt version3
+libopenmpt version3
 
 :: options also available with the suite
 set ffmpeg_options_full=chromaprint decklink frei0r libbs2b libcaca ^
 libcdio libfdk-aac libflite libfribidi libgme libgsm libilbc libsvthevc libsvtav1 ^
-libkvazaar libmodplug librtmp librubberband #libssh libtesseract libxavs libzmq ^
-libzvbi openal libvmaf libcodec2 libsrt ladspa #librav1e #vapoursynth #liblensfun
+#libsvtvp9 libkvazaar libmodplug librtmp librubberband #libssh libtesseract libxavs ^
+libzmq libzvbi openal libvmaf libcodec2 libsrt ladspa librav1e #vapoursynth #liblensfun
 
 :: options also available with the suite that add shared dependencies
 set ffmpeg_options_full_shared=opencl opengl cuda-nvcc libnpp libopenh264
 
 :: built-ins
-set mpv_options_builtin=#cplayer #manpage-build #lua #javascript #libass ^
+set mpv_options_builtin=#cplayer #manpage-build #lua #javascript ^
 #libbluray #uchardet #rubberband #lcms2 #libarchive #libavdevice ^
 #shaderc #spirv-cross #d3d11 #jpeg #vapoursynth #vulkan #libplacebo
 
@@ -135,7 +136,8 @@ set mpv_options_full=dvdnav cdda #egl-angle #html-build ^
 set iniOptions=msys2Arch arch license2 vpx2 x2643 x2652 other265 flac fdkaac mediainfo ^
 soxB ffmpegB2 ffmpegUpdate ffmpegChoice mp4box rtmpdump mplayer2 mpv cores deleteSource ^
 strip pack logging bmx standalone updateSuite aom faac ffmbc curl cyanrip2 redshift rav1e ^
-ripgrep dav1d vvc jq dssim avs2 timeStamp noMintty ccache svthevc svtav1 svtvp9 xvc jo
+ripgrep dav1d vvc jq dssim avs2 timeStamp noMintty ccache svthevc svtav1 svtvp9 xvc jo ^
+vlc CC
 
 set deleteIni=0
 set ini=%build%\media-autobuild_suite.ini
@@ -857,6 +859,30 @@ if %buildmpv%==2 set "mpv=n"
 if %buildmpv% GTR 2 GOTO mpv
 if %deleteINI%==1 echo.mpv=^%buildmpv%>>%ini%
 
+:vlc
+if %vlcINI%==0 (
+    echo -------------------------------------------------------------------------------
+    echo -------------------------------------------------------------------------------
+    echo.
+    echo. Build vlc?
+    echo. Takes a long time because of qt5 and wouldn't recommend it if you
+    echo. don't have ccache enabled.
+    echo. 1 = Yes
+    echo. 2 = No
+    echo.
+    echo. Note: the resulting vlc is extra buggy, do not expect it to work smoothly
+    echo.
+    echo -------------------------------------------------------------------------------
+    echo -------------------------------------------------------------------------------
+    set /P buildvlc="Build vlc: "
+) else set buildvlc=%vlcINI%
+
+if "%buildvlc%"=="" GOTO vlc
+if %buildvlc%==1 set "vlc=y"
+if %buildvlc%==2 set "vlc=n"
+if %buildvlc% GTR 2 GOTO vlc
+if %deleteINI%==1 echo.vlc=^%buildvlc%>>%ini%
+
 :bmx
 if %bmxINI%==0 (
     echo -------------------------------------------------------------------------------
@@ -1078,6 +1104,28 @@ if %buildavs2%==1 set "avs2=y"
 if %buildavs2%==2 set "avs2=n"
 if %buildavs2% GTR 2 GOTO avs2
 if %deleteINI%==1 echo.avs2=^%buildavs2%>>%ini%
+
+:CC
+if %CCINI%==0 (
+    echo -------------------------------------------------------------------------------
+    echo -------------------------------------------------------------------------------
+    echo.
+    echo. Use clang instead of gcc (C compiler^)?
+    echo. Experimental and possibly broken due to gcc assumptions
+    echo. 1 = Yes
+    echo. 2 = No [Recommended]
+    echo.
+    echo.
+    echo -------------------------------------------------------------------------------
+    echo -------------------------------------------------------------------------------
+    set /P buildCC="Build using clang: "
+) else set buildCC=%CCINI%
+
+if "%buildCC%"=="" GOTO CC
+if %buildCC%==1 set "CC=clang"
+if %buildCC%==2 set "CC=gcc"
+if %buildCC% GTR 2 GOTO CC
+if %deleteINI%==1 echo.CC=^%buildCC%>>%ini%
 
 :numCores
 if %NUMBER_OF_PROCESSORS% EQU 1 ( set coreHalf=1 ) else set /a coreHalf=%NUMBER_OF_PROCESSORS%/2
@@ -1315,13 +1363,10 @@ if not exist "%instdir%\%msys2%\msys2_shell.cmd" (
     echo.
     echo -------------------------------------------------------------------------------
     echo [System.Net.ServicePointManager]::SecurityProtocol = 'Tls12'; ^
-        $wc = New-Object System.Net.WebClient; ^
-        while ((Get-Item $PWD\msys2-base.tar.xz -ErrorAction Ignore^).Length -ne ^
-        (Invoke-WebRequest -Uri "http://repo.msys2.org/distrib/msys2-%msysprefix%-latest.tar.xz" ^
-        -UseBasicParsing -Method Head^).headers.'Content-Length'^) {if ($i -le 5^) {try ^
-        {$wc.DownloadFile('http://repo.msys2.org/distrib/msys2-%msysprefix%-latest.tar.xz', ^
-        "$PWD\msys2-base.tar.xz"^)} catch {$i++}}} | powershell -NoProfile -Command - || goto :errorMsys
-
+        (New-Object System.Net.WebClient^).DownloadFile(^
+        'https://github.com/msys2/msys2-installer/releases/download/nightly-%msysprefix%/msys2-base-%msysprefix%-latest.tar.xz', ^
+        "$PWD\msys2-base.tar.xz"^) | powershell -NoProfile -Command - || goto :errorMsys
+rem used to be http://repo.msys2.org/distrib/msys2-%msysprefix%-latest.tar.xz
     :unpack
     if exist %build%\msys2-base.tar.xz (
         echo -------------------------------------------------------------------------------
@@ -1629,7 +1674,8 @@ set compileArgs=--cpuCount=%cpuCount% --build32=%build32% --build64=%build64% ^
 --logging=%logging% --bmx=%bmx% --standalone=%standalone% --aom=%aom% --faac=%faac% --ffmbc=%ffmbc% ^
 --curl=%curl% --cyanrip=%cyanrip% --redshift=%redshift% --rav1e=%rav1e% --ripgrep=%ripgrep% ^
 --dav1d=%dav1d% --vvc=%vvc% --jq=%jq% --jo=%jo% --dssim=%dssim% --avs2=%avs2% --timeStamp=%timeStamp% ^
---noMintty=%noMintty% --ccache=%ccache% --svthevc=%svthevc% --svtav1=%svtav1% --svtvp9=%svtvp9% --xvc=%xvc%
+--noMintty=%noMintty% --ccache=%ccache% --svthevc=%svthevc% --svtav1=%svtav1% --svtvp9=%svtvp9% --xvc=%xvc% ^
+--vlc=%vlc%
     set "msys2=%msys2%"
     set "noMintty=%noMintty%"
     if %build64%==yes ( set "MSYSTEM=MINGW64" ) else set "MSYSTEM=MINGW32"
@@ -1685,8 +1731,13 @@ goto :EOF
     echo.
     echo.alias dir='ls -la --color=auto'
     echo.alias ls='ls --color=auto'
-    echo.export CC="ccache gcc"
-    echo.export CXX="ccache g++"
+    if %CC%==clang (
+        echo.export CC="ccache clang"
+        echo.export CXX="ccache clang++"
+    ) else (
+        echo.export CC="ccache gcc"
+        echo.export CXX="ccache g++"
+    )
     echo.
     echo.CARCH="${MINGW_CHOST%%%%-*}"
     echo.CPATH="`cygpath -m $LOCALDESTDIR/include`;`cygpath -m $MINGW_PREFIX/include`"
@@ -1701,13 +1752,16 @@ goto :EOF
     echo.PKG_CONFIG="${MINGW_PREFIX}/bin/pkg-config --static"
     echo.PKG_CONFIG_PATH="${LOCALDESTDIR}/lib/pkgconfig:${MINGW_PREFIX}/lib/pkgconfig"
     echo.CPPFLAGS="-D_FORTIFY_SOURCE=0 -D__USE_MINGW_ANSI_STDIO=1"
-    echo.CFLAGS="-mthreads -mtune=generic -O2 -pipe"
+    if %CC%==clang (
+        echo.CFLAGS="-mtune=generic -O2 -pipe"
+    ) else (
+        echo.CFLAGS="-mthreads -mtune=generic -O2 -pipe"
+    )
     echo.CXXFLAGS="${CFLAGS}"
     echo.LDFLAGS="-pipe -static-libgcc -static-libstdc++"
     echo.export DXSDK_DIR ACLOCAL_PATH PKG_CONFIG PKG_CONFIG_PATH CPPFLAGS CFLAGS CXXFLAGS LDFLAGS MSYSTEM
     echo.
     echo.export CARGO_HOME="/opt/cargo" RUSTUP_HOME="/opt/cargo"
-    echo.export SCCACHE_DIR="$HOME/.sccache"
     echo.export CCACHE_DIR="$HOME/.ccache"
     echo.
     echo.export PYTHONPATH=
