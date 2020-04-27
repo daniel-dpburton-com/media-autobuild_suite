@@ -1446,7 +1446,7 @@ if [[ $x264 != no ]]; then
         unset_extra_script
         if [[ $standalone = y && $x264 =~ (full|fullv) ]]; then
             _check=("$LOCALDESTDIR"/opt/lightffmpeg/lib/pkgconfig/libav{codec,format}.pc)
-            do_vcs "https://github.com/daniel-dpburton-com/FFmpeg"
+            do_vcs "https://github.com/daniel-dpburton-com/FFmpeg.git"
             do_uninstall "$LOCALDESTDIR"/opt/lightffmpeg
             [[ -f "config.mak" ]] && log "distclean" make distclean
             create_build_dir light
@@ -1860,7 +1860,7 @@ if [[ $ffmpeg != "no" ]]; then
     # todo: make this more easily customizable
     [[ $ffmpegUpdate = y ]] && enabled_any lib{aom,tesseract,vmaf,x265,vpx} &&
         _deps=(lib{aom,tesseract,vmaf,x265,vpx}.a)
-    if do_vcs "https://github.com/daniel-dpburton-com/FFmpeg"; then
+    if do_vcs "https://github.com/daniel-dpburton-com/FFmpeg.git"; then
 
         # See issue https://github.com/OpenVisualCloud/SVT-AV1/issues/567 for the reasons behind the follow codeblock:
         # start of SVT-AV1 temporary measures
@@ -2016,7 +2016,7 @@ if [[ $mplayer = "y" ]] &&
     if [[ ! -d ffmpeg ]] &&
         ! { [[ -d $LOCALBUILDDIR/ffmpeg-git ]] &&
         git clone -q "$LOCALBUILDDIR/ffmpeg-git" ffmpeg; } &&
-        ! git clone "https://github.com/daniel-dpburton-com/FFmpeg" ffmpeg; then
+        ! git clone "https://github.com/daniel-dpburton-com/FFmpeg.git" ffmpeg; then
         rm -rf ffmpeg
         printf '%s\n' \
             "Failed to get a FFmpeg checkout" \
@@ -2337,7 +2337,7 @@ if [[ $cyanrip = y ]]; then
     if do_vcs "https://github.com/cyanreg/cyanrip.git"; then
         old_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
         _check=("$LOCALDESTDIR"/opt/cyanffmpeg/lib/pkgconfig/libav{codec,format}.pc)
-        if flavor=cyan do_vcs "https://github.com/daniel-dpburton-com/FFmpeg"; then
+        if flavor=cyan do_vcs "https://github.com/daniel-dpburton-com/FFmpeg.git"; then
             do_uninstall "$LOCALDESTDIR"/opt/cyanffmpeg
             [[ -f "config.mak" ]] && log "distclean" make distclean
             mapfile -t cyan_ffmpeg_opts < <(
