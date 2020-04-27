@@ -1356,26 +1356,6 @@ if [[ $ffmpeg != "no" ]] && enabled decklink &&
     do_checkIfExist
 fi
 
-_check=(Processing.NDI.compat.h Processing.NDI.deprecated.h Processing.NDI.DynamicLoad.h Processing.NDI.Find.h Processing.NDI.FrameSync.h Processing.NDI.Lib.cplusplus.h Processing.NDI.Lib.h Processing.NDI.Recv.ex.h Processing.NDI.Recv.h Processing.NDI.Routing.h Processing.NDI.Send.h Processing.NDI.structs.h Processing.NDI.utilities.h)
-if [[ $bits = "32bit" ]] && [[ $ffmpeg != "no" ]] && enabled newtek_headers &&
-    do_vcs "https://github.com/daniel-dpburton-com/libndi_newtek-headers-32.git"; then
-    do_makeinstall PREFIX="$LOCALDESTDIR"
-    do_checkIfExist
-elif [[ $bits = "32bit" ]] && [[ $ffmpeg != "no" ]] && enabled newtek-headers &&
-    do_vcs "https://github.com/daniel-dpburton-com/libndi_newtek-headers-32.git"; then
-    do_makeinstall PREFIX="$LOCALDESTDIR"
-    do_checkIfExist
-elif [[ $ffmpeg != "no" ]] && enabled newtek_headers &&
-    do_vcs "https://github.com/daniel-dpburton-com/libndi_newtek-headers-64.git"; then
-    do_makeinstall PREFIX="$LOCALDESTDIR"
-    do_checkIfExist
-elif [[ $ffmpeg != "no" ]] && enabled newtek-headers &&
-    do_vcs "https://github.com/daniel-dpburton-com/libndi_newtek-headers-64.git"; then
-    do_makeinstall PREFIX="$LOCALDESTDIR"
-    do_checkIfExist
-fi
-
-
 _check=(libmfx.{{l,}a,pc})
 if [[ $ffmpeg != "no" ]] && enabled libmfx &&
     do_vcs "https://github.com/lu-zero/mfx_dispatch.git" libmfx; then
